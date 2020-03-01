@@ -1,0 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Feb 29 17:50:22 2020
+
+@author: Ludovic Rappe, Pablo Laviolette, Timothe Taminiau
+"""
+
+#from "filename" import*
+from numpy import*
+import matplolib as plt
