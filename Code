@@ -106,7 +106,7 @@ def f(theta,p):
     @p : Un scalaire qui correspond a la pression dans le piston
     
     Outputs :
-    @p'(theta) : Derivee de la pression
+    @p'(theta,p) : Derivee de la pression
     
     """
     return 1/V(theta)*((gamma-1)*Q_prime(theta)-gamma*p*V_prime(theta))
