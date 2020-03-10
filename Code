@@ -140,7 +140,7 @@ def compute_p():
     return rungeKutta(theta_start,theta_end,p_start,N)
 
 def plot():
-    """Affiche 3 graphiques :
+    """Affiche 4 graphiques :
         1) Volume en fonction de theta
         2) Apport de chaleur en fonction de theta
         3) Diagramme (p,V)
