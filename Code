@@ -6,9 +6,178 @@ Created on Sat Feb 29 17:50:22 2020
 """
 
 from numpy import*
-import matplolib as plt
+import matplotlib.pyplot as plt
 
-#test
 
-def main() :
-  pass
+"""
+Toutes les donnees doivent etre fournies dans les unites du systeme international
+et les angles en radiants
+"""
+ 
+#Parametres fixes
+
+gamma = 1.3
+
+#Parametres variables
+
+# 1) Dimensions
+
+R = 0.22 #Rayon du vilebrequin
+L = 0.66 #Longueur de la bielle
+beta = L/R #Rapport entre la longueur de la bielle et le rayon du vilebrequin
+V_c = 450*10**(-3) #Volume de course
+tau = 10 #Taux de compression
+
+# 2) Proprietes
+
+m_gaz_admis = 0.25 #Masse de gaz admis
+p_start = 10**5 #Pression initiale dans le cylindre
+Q_tot = 2800*10**3*m_gaz_admis #Energie totale
+theta_d = -30*pi/180 #Angle de demarrage
+delta_comb = 60*pi/180 #Duree angulaire de la combustion
+
+# 3) Cycle
+
+theta_start = -2*pi #Angle de départ du cycle
+theta_end = 2*pi #Angle de fin du cycle
+N = 500 #Nombre d iterations de Runge-Kutta
+
+
+def V(theta):
+    """Calcule le volume de gaz dans le piston en fonction de l angle theta
+    
+    Inputs:
+    @theta : Un scalaire qui correspond à l angle actuel du vilebrequin
+    
+    Outputs :
+    @V(theta) : Volume
+    """
+    return 1/2*V_c*(1-cos(theta)+beta-sqrt(beta**2-(sin(theta))**2)+2/(tau-1))
+
+def V_prime(theta):
+    """Calcule la derivee du volume de gaz dans le piston en fonction de 
+    l angle theta
+    
+    Inputs :
+    @theta : Un scalaire qui correspond a l angle actuel du vilebrequin
+    
+    Outputs :
+    @V'(theta) : Derivee du volume
+    """
+    return 1/2*V_c*sin(theta)*(1+cos(theta)/(sqrt(beta**2-(sin(theta))**2)))
+
+def Q(theta):
+    """Calcule la quantite de chaleur apportee au gaz pour un angle theta qui 
+    prend une valeur non nulle uniquement sur l intervalle 
+    [theta_d,theta_d+delta_comb]
+    
+    Inputs :
+    @theta : Un scalaire qui correspond a l angle actuel du vilebrequin
+    
+    Outputs :
+    @Q(theta) : Quantite de chaleur
+    """
+    if (theta>theta_d and theta<theta_d+delta_comb):
+        return 1/2*Q_tot*(1-cos(pi*(theta-theta_d)/delta_comb))
+    else:
+        return 0
+       
+def Q_prime(theta):
+    """Calcule la derivee de la quantite de chaleur apportee au gaz pour un 
+    angle theta qui prend une valeur non nulle uniquement sur l intervalle 
+    [theta_d,theta_d+delta_comb]
+    
+    Inputs :
+    @theta : Un scalaire qui correspond a l angle actuel du vilebrequin
+    
+    Outputs :
+    @Q(theta) : Quantite de chaleur
+    """
+    if (theta>theta_d and theta<theta_d+delta_comb):
+        return 1/2*(pi*Q_tot)/delta_comb*sin(pi*(theta-theta_d)/delta_comb)
+    else:
+        return 0;
+    
+def f(theta,p):
+    """Calcule p'(theta) pour une pression et un angle donne
+    
+    Inputs :
+    @theta : Un scalaire qui correspond a l angle actuel du vilebrequin
+    @p : Un scalaire qui correspond a la pression dans le piston
+    
+    Outputs :
+    @p'(theta) : Derivee de la pression
+    
+    """
+    return 1/V(theta)*((gamma-1)*Q_prime(theta)-gamma*p*V_prime(theta))
+
+def rungeKutta(theta_start,theta_end,p_start,N):
+    """Calcule la solution de l equation p'(theta)=f(theta,p) 
+    avec p(theta_start)=p_start
+    
+    Inputs :
+    @theta_start : Angle de depart
+    @theta_end : Angle d arrive
+    @p_start : Pression initiale
+    @N : Nombre d iterations
+    
+    Outputs :
+    @theta : Vecteur contenant les abscisses
+    @p : Vecteur contenant les pressions pour chaque valeur de theta 
+    """
+    theta,h = linspace(theta_start,theta_end,N,retstep=True)
+    p = zeros(N); p[0] = p_start
+    for i in range(N-1):
+        K1 = f(theta[i],p[i])
+        K2 = f(theta[i]+h/2,p[i]+h/2*K1)
+        K3 = f(theta[i]+h/2,p[i]+h/2*K2)
+        K4 = f(theta[i]+h,p[i]+h*K3)
+        p[i+1] = p[i] + h/6*(K1+2*K2+2*K3+K4)
+    return theta,p
+
+def compute_p():
+    """Calcule la solution"""
+    return rungeKutta(theta_start,theta_end,p_start,N)
+
+def plot():
+    """Affiche 3 graphiques :
+        1) Volume en fonction de theta
+        2) Apport de chaleur en fonction de theta
+        3) Diagramme (p,V)
+        4) Pression en fonction de theta
+    """
+    theta,p = compute_p()
+    q = zeros(N)
+    for i in range(N):
+        q[i] = Q(theta[i])
+        
+    fig = plt.figure(figsize=(12,16))
+    
+    plt.subplot(4,1,1)
+    plt.plot(theta,V(theta))
+    plt.xlabel("theta [rad]")
+    plt.ylabel("V [m**3]")
+    
+    plt.subplot(4,1,2)
+    plt.plot(theta,q*10**(-3))
+    plt.xlabel("theta [rad]")
+    plt.ylabel("Q [kJ]")
+    
+    plt.subplot(4,1,3)
+    plt.plot(V(theta),p*10**(-5))
+    plt.xlabel("V [m**3]")
+    plt.ylabel("p [bar]")
+    
+    plt.subplot(4,1,4)
+    plt.plot(theta,p*10**(-5))
+    plt.xlabel("theta [rad]")
+    plt.ylabel("p [bar]")
+    
+    plt.subplots_adjust(hspace=0.5)
+    plt.show()
+    
+
+def main():
+    plot()
+
+main()
