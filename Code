@@ -1,45 +1,46 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Sat Feb 29 17:50:22 2020
-
-@author: Ludovic Rappe, Pablo Laviolette, Timothe Taminiau
-"""
-
 from numpy import*
 import matplotlib.pyplot as plt
-
 
 """
 Toutes les donnees doivent etre fournies dans les unites du systeme international
 et les angles en radiants
 """
+
  
-#Parametres fixes
+#Constantes
 
 gamma = 1.3
 
-#Parametres variables
+
+#Parametres
+
+tau = 10 #Taux de compression[-]
+D = 0.1 #Diametre de l'alesage[m]
+C = 0.44 #Longueur de la course[m]
+L = 0.66 #Longueur de la bielle[m]
+mpiston = 0 #Masse du piston[kg]
+mbielle = 0 #Masse de la bielle[kg]
+Q = 0 #Chaleur emise par fuel par kg de melance admis[J/kg_inlet gas]
+
 
 # 1) Dimensions
 
-R = 0.22 #Rayon du vilebrequin
-L = 0.66 #Longueur de la bielle
+R = C/2 #Rayon du vilebrequin
 beta = L/R #Rapport entre la longueur de la bielle et le rayon du vilebrequin
-V_c = 450*10**(-3) #Volume de course
-tau = 10 #Taux de compression
+V_c =  C*(pi*D**2)/4#Volume de course
 
 # 2) Proprietes
 
 m_gaz_admis = 0.25 #Masse de gaz admis
 p_start = 10**5 #Pression initiale dans le cylindre
 Q_tot = 2800*10**3*m_gaz_admis #Energie totale
-theta_d = -30*pi/180 #Angle de demarrage
-delta_comb = 60*pi/180 #Duree angulaire de la combustion
+thetaC = -30*pi/180 #Angle de demarrage
+deltaThetaC = 60*pi/180 #Duree angulaire de la combustion
 
 # 3) Cycle
 
-theta_start = -2*pi #Angle de départ du cycle
-theta_end = 2*pi #Angle de fin du cycle
+theta_start = -pi #Angle de départ du cycle
+theta_end = pi #Angle de fin du cycle
 N = 500 #Nombre d iterations de Runge-Kutta
 
 
@@ -77,8 +78,8 @@ def Q(theta):
     Outputs :
     @Q(theta) : Quantite de chaleur
     """
-    if (theta>theta_d and theta<theta_d+delta_comb):
-        return 1/2*Q_tot*(1-cos(pi*(theta-theta_d)/delta_comb))
+    if (theta>thetaC and theta<thetaC+deltaThetaC):
+        return 1/2*Q_tot*(1-cos(pi*(theta-thetaC)/deltaThetaC))
     else:
         return 0
        
@@ -93,8 +94,8 @@ def Q_prime(theta):
     Outputs :
     @Q(theta) : Quantite de chaleur
     """
-    if (theta>theta_d and theta<theta_d+delta_comb):
-        return 1/2*(pi*Q_tot)/delta_comb*sin(pi*(theta-theta_d)/delta_comb)
+    if (theta>thetaC and theta<thetaC+deltaThetaC):
+        return 1/2*(pi*Q_tot)/deltaThetaC*sin(pi*(theta-thetaC)/deltaThetaC)
     else:
         return 0;
     
@@ -106,7 +107,7 @@ def f(theta,p):
     @p : Un scalaire qui correspond a la pression dans le piston
     
     Outputs :
-    @p'(theta,p) : Derivee de la pression
+    @p'(theta) : Derivee de la pression
     
     """
     return 1/V(theta)*((gamma-1)*Q_prime(theta)-gamma*p*V_prime(theta))
@@ -150,31 +151,35 @@ def plot():
     q = zeros(N)
     for i in range(N):
         q[i] = Q(theta[i])
-        
-    fig = plt.figure(figsize=(12,16))
     
-    plt.subplot(4,1,1)
-    plt.plot(theta,V(theta))
-    plt.xlabel("theta [rad]")
-    plt.ylabel("V [m**3]")
+    fig = plt.figure(figsize=(16,14))
+    fig.subplots_adjust(hspace=0.5)
+    g1 = fig.add_subplot(4,1,1)
+    g2 = fig.add_subplot(4,1,2)
+    g3 = fig.add_subplot(4,1,3)
+    g4 = fig.add_subplot(4,1,4)
     
-    plt.subplot(4,1,2)
-    plt.plot(theta,q*10**(-3))
-    plt.xlabel("theta [rad]")
-    plt.ylabel("Q [kJ]")
+    g1.set_title("Volume en fonction de theta")
+    g1.set_xlabel("theta [rad]")
+    g1.set_ylabel("V [m**3]")
+    g1.plot(theta,V(theta))
+
+    g2.set_title("Apport de chaleur en fonction de theta")
+    g2.set_xlabel("theta [rad]")
+    g2.set_ylabel("Q [kJ]")    
+    g2.plot(theta,q*10**(-3))
     
-    plt.subplot(4,1,3)
-    plt.plot(V(theta),p*10**(-5))
-    plt.xlabel("V [m**3]")
-    plt.ylabel("p [bar]")
+    g3.set_title("Diagramme (p,V)")
+    g3.set_xlabel("V [m**3]")
+    g3.set_ylabel("p [bar]")
+    g3.plot(V(theta),p*10**(-5))
     
-    plt.subplot(4,1,4)
-    plt.plot(theta,p*10**(-5))
-    plt.xlabel("theta [rad]")
-    plt.ylabel("p [bar]")
+    g4.set_title("Pression en fonction de theta")
+    g4.set_xlabel("theta [rad]")
+    g4.set_ylabel("p [bar]")
+    g4.plot(theta,p*10**(-5))
     
-    plt.subplots_adjust(hspace=0.5)
-    plt.show()
+    fig.show()
     
 
 def main():
