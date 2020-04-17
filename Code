@@ -15,13 +15,13 @@ gamma = 1.3
 #Parametres
 
 tau = 10 #Taux de compression[-]
-D = 0.1 #Diametre de l'alesage[m]
-C = 0.44 #Longueur de la course[m]
-L = 0.66 #Longueur de la bielle[m]
-mpiston = 0 #Masse du piston[kg]
-mbielle = 0 #Masse de la bielle[kg]
+D = 0.03 #Diametre de l'alesage[m]
+C = 0.1047 #Longueur de la course[m]
+L = 0.17272 #Longueur de la bielle[m]
+mpiston = 0.1 #Masse du piston[kg]
+mbielle = 0.1 #Masse de la bielle[kg]
 Q = 0 #Chaleur emise par fuel par kg de melance admis[J/kg_inlet gas]
-
+w = 3000
 
 # 1) Dimensions
 
@@ -112,7 +112,7 @@ def f(theta,p):
     """
     return 1/V(theta)*((gamma-1)*Q_prime(theta)-gamma*p*V_prime(theta))
 
-def rungeKutta(theta_start,theta_end,p_start,N):
+def euler_explicite(theta_start,theta_end,p_start,N):
     """Calcule la solution de l equation p'(theta)=f(theta,p) 
     avec p(theta_start)=p_start
     
@@ -129,24 +129,12 @@ def rungeKutta(theta_start,theta_end,p_start,N):
     theta,h = linspace(theta_start,theta_end,N,retstep=True)
     p = zeros(N); p[0] = p_start
     for i in range(N-1):
-        K1 = f(theta[i],p[i])
-        K2 = f(theta[i]+h/2,p[i]+h/2*K1)
-        K3 = f(theta[i]+h/2,p[i]+h/2*K2)
-        K4 = f(theta[i]+h,p[i]+h*K3)
-        p[i+1] = p[i] + h/6*(K1+2*K2+2*K3+K4)
-    return theta,p
-
-def eulerExplicite(theta_start,theta_end,p_start,N):
-    
-    theta,h = linspace(theta_start,theta_end,N,retstep=True)
-    p = zeros(N); p[0] = p_start
-    for i in range(N-1):
-        p[i+1] = p[i] + h*f(theta[i],p[i])
+        p[i+1] = p[i] + h*f(theta[i],p[i]) 
     return theta,p
 
 def compute_p():
     """Calcule la solution"""
-    return eulerExplicite(theta_start,theta_end,p_start,N)
+    return euler_explicite(theta_start,theta_end,p_start,N)
 
 def plot():
     """Affiche 4 graphiques :
@@ -160,12 +148,13 @@ def plot():
     for i in range(N):
         q[i] = Q(theta[i])
     
-    fig = plt.figure(figsize=(16,14))
+    fig = plt.figure(1,figsize=(16,14))
     fig.subplots_adjust(hspace=0.5)
     g1 = fig.add_subplot(4,1,1)
     g2 = fig.add_subplot(4,1,2)
     g3 = fig.add_subplot(4,1,3)
     g4 = fig.add_subplot(4,1,4)
+    
     
     g1.set_title("Volume en fonction de theta")
     g1.set_xlabel("theta [rad]")
@@ -187,8 +176,37 @@ def plot():
     g4.set_ylabel("p [bar]")
     g4.plot(theta,p*10**(-5))
     
-    fig.show()
     
+    fig2 = plt.figure(2,figsize=(16,14))
+    fig2.subplots_adjust(hspace=0.5)
+    f1 = fig2.add_subplot(2,1,1)
+    f2 = fig2.add_subplot(2,1,2)
+    
+
+    f1.set_title("Efforts sur la bielle")
+    f1.set_xlabel("theta [rad]")
+    f1.set_ylabel("F [N]")
+    
+    f2.set_title("Efforts sur la bielle")
+    f2.set_xlabel("theta [rad]")
+    f2.set_ylabel("F [N]")
+    
+    F_pression = pi*D**2*p/4
+    F_pied = F_pression - mpiston*R*w**2*cos(theta)
+    F_tete = -F_pression + (mpiston + mbielle)*R*w**2*cos(theta)
+    F_tot = F_pied + F_tete
+    
+    f1.plot(theta, F_pied, '-k', label='F_pied')  
+    f1.plot(theta, F_tete, 'm', label='F_tete')
+    f1.plot(theta, F_tot, 'r', label='F_tot')
+    #f1.plot(theta, F_pression)
+    
+    f2.plot(theta, F_tot)
+    
+    fig.show()
+    fig2.show()
+
+
 
 def main():
     plot()
