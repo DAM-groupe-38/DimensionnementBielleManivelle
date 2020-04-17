@@ -136,9 +136,17 @@ def rungeKutta(theta_start,theta_end,p_start,N):
         p[i+1] = p[i] + h/6*(K1+2*K2+2*K3+K4)
     return theta,p
 
+def eulerExplicite(theta_start,theta_end,p_start,N):
+    
+    theta,h = linspace(theta_start,theta_end,N,retstep=True)
+    p = zeros(N); p[0] = p_start
+    for i in range(N-1):
+        p[i+1] = p[i] + h*f(theta[i],p[i])
+    return theta,p
+
 def compute_p():
     """Calcule la solution"""
-    return rungeKutta(theta_start,theta_end,p_start,N)
+    return eulerExplicite(theta_start,theta_end,p_start,N)
 
 def plot():
     """Affiche 4 graphiques :
